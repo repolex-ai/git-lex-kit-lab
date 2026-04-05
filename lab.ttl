@@ -14,7 +14,7 @@
 # Collaborative research for multi-agent teams. Git-native, SPARQL-queryable,
 # FAIR-aligned. Public by default — lab graphs are designed to be federated.
 #
-# Kit: lex-lab
+# Kit: lab
 # Namespace: lab: = https://repolex.ai/ontology/kit/lex-lab/
 # Extends: lex-o: (upper ontology)
 # Aligns: PROV-O, DCTERMS, CiTO, FaBiO (SPAR ontologies)
@@ -22,8 +22,8 @@
 # Document types (= valid `git lex create` commands):
 #   investigation, experiment, survey, synthesis, hypothesis
 #
-# Property types are declared by owl:DatatypeProperty / owl:ObjectProperty.
-# SHACL shapes validate and document each field.
+# All constraints (required fields, enums, types) are encoded here.
+# SHACL shapes are generated from this file — do not hand-edit shapes.
 #
 # The gap this kit fills:
 #   Existing research ontologies (PROV-O, nanopub, FaBiO) cover what research IS
@@ -35,9 +35,41 @@
 <https://repolex.ai/ontology/kit/lex-lab> a owl:Ontology ;
     rdfs:label "Lex-Lab Kit Ontology" ;
     rdfs:comment "Collaborative research for multi-agent teams. Git-native, SPARQL-queryable, FAIR-aligned. Public by default — lab graphs are designed to be federated and cited." ;
-    owl:versionInfo "0.1" ;
+    owl:versionInfo "0.2" ;
     owl:imports <http://www.w3.org/ns/prov-o#> ;
     dcterms:license <https://creativecommons.org/licenses/by/4.0/> .
+
+
+# =============================================================================
+# ENUM DATATYPES
+# =============================================================================
+
+lab:InvestigationStatusValue a rdfs:Datatype ;
+    owl:oneOf ("open" "active" "paused" "concluded" "abandoned") .
+
+lab:HypothesisStatusValue a rdfs:Datatype ;
+    owl:oneOf ("proposed" "active" "supported" "refuted" "revised" "abandoned") .
+
+lab:ConfidenceValue a rdfs:Datatype ;
+    owl:oneOf ("speculative" "plausible" "likely" "supported" "refuted") .
+
+lab:ExperimentStatusValue a rdfs:Datatype ;
+    owl:oneOf ("planned" "running" "complete" "failed" "abandoned") .
+
+lab:SurveyStatusValue a rdfs:Datatype ;
+    owl:oneOf ("planned" "in-progress" "complete") .
+
+lab:SynthesisStatusValue a rdfs:Datatype ;
+    owl:oneOf ("draft" "review" "published" "superseded") .
+
+lab:EvidenceStrengthValue a rdfs:Datatype ;
+    owl:oneOf ("weak" "moderate" "strong" "conclusive") .
+
+lab:DeliberationStatusValue a rdfs:Datatype ;
+    owl:oneOf ("open" "converging" "concluded" "deadlocked") .
+
+lab:DeliberationOutcomeValue a rdfs:Datatype ;
+    owl:oneOf ("consensus" "dissensus" "deferred" "merged") .
 
 
 # =============================================================================
@@ -53,7 +85,17 @@ lab:Investigation a owl:Class ;
     rdfs:subClassOf lex-o:Process ;
     rdfs:subClassOf prov:Activity ;
     rdfs:label "Investigation" ;
-    rdfs:comment "A named research thread: a question being investigated. Container for experiments, surveys, and the synthesis that concludes it. Aligns with OBI's 'investigation' concept." .
+    rdfs:comment "A named research thread: a question being investigated. Container for experiments, surveys, and the synthesis that concludes it. Aligns with OBI's 'investigation' concept." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:researchQuestion ;
+        owl:minCardinality 1
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:investigationStatus ;
+        owl:minCardinality 1
+    ] .
 
 lab:researchQuestion a owl:DatatypeProperty ;
     rdfs:label "research question" ;
@@ -65,7 +107,7 @@ lab:investigationStatus a owl:DatatypeProperty ;
     rdfs:label "investigation status" ;
     rdfs:comment "Status: 'open', 'active', 'paused', 'concluded', 'abandoned'." ;
     rdfs:domain lab:Investigation ;
-    rdfs:range xsd:string .
+    rdfs:range lab:InvestigationStatusValue .
 
 lab:lead a owl:ObjectProperty ;
     rdfs:label "lead" ;
@@ -101,7 +143,17 @@ lab:concludedBy a owl:ObjectProperty ;
 lab:Hypothesis a owl:Class ;
     rdfs:subClassOf lex-o:Information ;
     rdfs:label "Hypothesis" ;
-    rdfs:comment "A falsifiable claim being evaluated. Tracks its own lifecycle from proposal through support, refutation, or revision." .
+    rdfs:comment "A falsifiable claim being evaluated. Tracks its own lifecycle from proposal through support, refutation, or revision." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:claim ;
+        owl:minCardinality 1
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:hypothesisStatus ;
+        owl:minCardinality 1
+    ] .
 
 lab:claim a owl:DatatypeProperty ;
     rdfs:label "claim" ;
@@ -113,7 +165,7 @@ lab:hypothesisStatus a owl:DatatypeProperty ;
     rdfs:label "hypothesis status" ;
     rdfs:comment "Lifecycle: 'proposed', 'active', 'supported', 'refuted', 'revised', 'abandoned'." ;
     rdfs:domain lab:Hypothesis ;
-    rdfs:range xsd:string .
+    rdfs:range lab:HypothesisStatusValue .
 
 lab:revisedBy a owl:ObjectProperty ;
     rdfs:label "revised by" ;
@@ -132,7 +184,7 @@ lab:confidence a owl:DatatypeProperty ;
     rdfs:label "confidence" ;
     rdfs:comment "Current confidence level: 'speculative', 'plausible', 'likely', 'supported', 'refuted'." ;
     rdfs:domain lab:Hypothesis ;
-    rdfs:range xsd:string .
+    rdfs:range lab:ConfidenceValue .
 
 
 # --- Experiment ---
@@ -143,7 +195,17 @@ lab:Experiment a owl:Class ;
     rdfs:subClassOf lex-o:Process ;
     rdfs:subClassOf prov:Activity ;
     rdfs:label "Experiment" ;
-    rdfs:comment "A specific test of a hypothesis. Protocol describes what was done; result describes what was observed; conclusion interprets the result. Extends P-Plan's Plan/Step model for git-native execution." .
+    rdfs:comment "A specific test of a hypothesis. Protocol describes what was done; result describes what was observed; conclusion interprets the result. Extends P-Plan's Plan/Step model for git-native execution." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:protocol ;
+        owl:minCardinality 1
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:experimentStatus ;
+        owl:minCardinality 1
+    ] .
 
 lab:protocol a owl:DatatypeProperty ;
     rdfs:label "protocol" ;
@@ -167,7 +229,7 @@ lab:experimentStatus a owl:DatatypeProperty ;
     rdfs:label "experiment status" ;
     rdfs:comment "Status: 'planned', 'running', 'complete', 'failed', 'abandoned'." ;
     rdfs:domain lab:Experiment ;
-    rdfs:range xsd:string .
+    rdfs:range lab:ExperimentStatusValue .
 
 lab:tests a owl:ObjectProperty ;
     rdfs:label "tests" ;
@@ -216,7 +278,17 @@ lab:Survey a owl:Class ;
     rdfs:subClassOf lex-o:Information ;
     rdfs:subClassOf fabio:ReviewArticle ;
     rdfs:label "Survey" ;
-    rdfs:comment "Systematic review of existing work — literature, prior experiments, standards. What is already known before the investigation starts. Aligns with FaBiO's ReviewArticle." .
+    rdfs:comment "Systematic review of existing work — literature, prior experiments, standards. What is already known before the investigation starts. Aligns with FaBiO's ReviewArticle." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:scope ;
+        owl:minCardinality 1
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:surveyStatus ;
+        owl:minCardinality 1
+    ] .
 
 lab:scope a owl:DatatypeProperty ;
     rdfs:label "scope" ;
@@ -240,7 +312,7 @@ lab:surveyStatus a owl:DatatypeProperty ;
     rdfs:label "survey status" ;
     rdfs:comment "Status: 'planned', 'in-progress', 'complete'." ;
     rdfs:domain lab:Survey ;
-    rdfs:range xsd:string .
+    rdfs:range lab:SurveyStatusValue .
 
 lab:informs a owl:ObjectProperty ;
     rdfs:label "informs" ;
@@ -259,7 +331,17 @@ lab:Synthesis a owl:Class ;
     rdfs:subClassOf lex-o:Information ;
     rdfs:subClassOf prov:Entity ;
     rdfs:label "Synthesis" ;
-    rdfs:comment "Combined insight from multiple experiments and surveys. The conclusion of an investigation — where distributed multi-agent research converges. Designed to be citable and published. Aligns with nanopublication's Assertion + Provenance + PublicationInfo structure." .
+    rdfs:comment "Combined insight from multiple experiments and surveys. The conclusion of an investigation — where distributed multi-agent research converges. Designed to be citable and published. Aligns with nanopublication's Assertion + Provenance + PublicationInfo structure." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:synthesizedClaim ;
+        owl:minCardinality 1
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:synthesisStatus ;
+        owl:minCardinality 1
+    ] .
 
 lab:synthesizedClaim a owl:DatatypeProperty ;
     rdfs:label "synthesized claim" ;
@@ -271,13 +353,13 @@ lab:synthesisStatus a owl:DatatypeProperty ;
     rdfs:label "synthesis status" ;
     rdfs:comment "Status: 'draft', 'review', 'published', 'superseded'." ;
     rdfs:domain lab:Synthesis ;
-    rdfs:range xsd:string .
+    rdfs:range lab:SynthesisStatusValue .
 
 lab:evidenceStrength a owl:DatatypeProperty ;
     rdfs:label "evidence strength" ;
     rdfs:comment "How strong is the evidence: 'weak', 'moderate', 'strong', 'conclusive'." ;
     rdfs:domain lab:Synthesis ;
-    rdfs:range xsd:string .
+    rdfs:range lab:EvidenceStrengthValue .
 
 lab:concludes a owl:ObjectProperty ;
     rdfs:label "concludes" ;
@@ -332,7 +414,12 @@ lab:authors a owl:ObjectProperty ;
 lab:ResearchBranch a owl:Class ;
     rdfs:subClassOf lex-o:Information ;
     rdfs:label "Research Branch" ;
-    rdfs:comment "A git branch framed as a hypothesis container. The branch name is the hypothesis name. Commits on the branch are evidence accumulation. Merge = synthesis conclusion." .
+    rdfs:comment "A git branch framed as a hypothesis container. The branch name is the hypothesis name. Commits on the branch are evidence accumulation. Merge = synthesis conclusion." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:branchName ;
+        owl:minCardinality 1
+    ] .
 
 lab:branchName a owl:DatatypeProperty ;
     rdfs:label "branch name" ;
@@ -356,19 +443,24 @@ lab:Deliberation a owl:Class ;
     rdfs:subClassOf lex-o:Process ;
     rdfs:subClassOf prov:Activity ;
     rdfs:label "Deliberation" ;
-    rdfs:comment "Structured multi-agent debate preceding a synthesis. Records the reasoning process — arguments, counterarguments, and how consensus (or dissensus) was reached. Extends the micropublications Claim→Argument→Evidence dialectical model." .
+    rdfs:comment "Structured multi-agent debate preceding a synthesis. Records the reasoning process — arguments, counterarguments, and how consensus (or dissensus) was reached. Extends the micropublications Claim→Argument→Evidence dialectical model." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty lab:deliberationStatus ;
+        owl:minCardinality 1
+    ] .
 
 lab:deliberationStatus a owl:DatatypeProperty ;
     rdfs:label "deliberation status" ;
     rdfs:comment "Status: 'open', 'converging', 'concluded', 'deadlocked'." ;
     rdfs:domain lab:Deliberation ;
-    rdfs:range xsd:string .
+    rdfs:range lab:DeliberationStatusValue .
 
 lab:outcome a owl:DatatypeProperty ;
     rdfs:label "outcome" ;
     rdfs:comment "How the deliberation ended: 'consensus', 'dissensus', 'deferred', 'merged'." ;
     rdfs:domain lab:Deliberation ;
-    rdfs:range xsd:string .
+    rdfs:range lab:DeliberationOutcomeValue .
 
 lab:regarding a owl:ObjectProperty ;
     rdfs:label "regarding" ;
